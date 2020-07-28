@@ -1,0 +1,46 @@
+
+# qiime tutorial
+
+# 1. download dataset of tutorial
+
+wget ftp://ftp.microbio.me/qiime/tutorial_files/moving_pictures_tutorial-1.9.0.tgz
+tar -xzf moving_pictures_tutorial-1.9.0.tgz
+
+# move to dir
+
+cd moving_pictures_tutorial-1.9.0/illumina
+ 
+# 2. check our mapping file for errors
+
+validate_mapping_file.py -o vmf-map/ -m map.tsv
+validate_mapping_file.py -o vmf-map-bad/ -m map-bad.tsv
+
+# 3. Demultiplexing and quality filtering sequences
+#	-> Sequencing후에는 reads들은 붙였던 barcode를 통해서 sample of origin을 찾는 과정과 필터링
+#	-> forward_ reads fastq와 barcodes.fastq 파일을 map 파일에 넣어서 결과 slout 도출
+
+split_libraries_fastq.py –o slout/ -i forward_reads.fastq.gz –b barcodes.fastq.gz –m map.tsv
+#	-i 에 forward_reads fastq 파일을 넣고~ -b 에 barcode fastq 파일을 넣고 -m에 맵핑 파일을 넣습니다!!
+#	-o 는 분석 후 결과에 출력되는 폴더를 만들어 주는것입니다. slout이라는 이름으로 결과가 나오겟네요.
+#	-> 결과 파일로 seqs.fna & log file 생성
+
+view seqs.fna
+#	file  상세보기 기능
+
+count_seqs.py –i slout/seqs.fna
+#	count whole read and read lengths
+
+# 4. OTU cluster analysis (picking)
+
+pick_open_reference_otus.py -o otus/ -i slout/seqs.fna -p ../uc_fast_params.txt
+
+biom summarize-table -i otus/otu_table_mc2_w_tax_no_pynast_failures.biom
+# show about biom file summarize
+
+
+# 5. Run diversity analyses
+
+core_diversity_analyses.py -o cdout/ -i otus/otu_table_mc2_w_tax_no_pynast_failures.biom -m map.tsv -t otus/rep_set.tre -e 1114
+
+core_diversity_analyses.py -o cdout/ --recover_from_failure -c "SampleType,DaysSinceExperimentStart" -i otus/otu_table_mc2_w_tax_no_pynast_failures.biom -m map.tsv -t otus/rep_set.tre -e 1114
+
